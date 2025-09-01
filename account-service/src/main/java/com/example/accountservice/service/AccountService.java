@@ -6,6 +6,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Random;
 
@@ -20,29 +21,47 @@ public class AccountService {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    // Generate 12-digit account number
+    // Generate 12-digit account number that doesn't start with 0
     private String generateAccountNumber() {
         Random random = new Random();
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 12; i++) {
+
+        // Ensure the first digit is not 0
+        sb.append(random.nextInt(9) + 1);
+
+        // Append the remaining 11 digits
+        for (int i = 0; i < 11; i++) {
             sb.append(random.nextInt(10));
         }
+
         return sb.toString();
     }
 
+//    // Generate 12-digit account number
+//    private String generateAccountNumber() {
+//        Random random = new Random();
+//        StringBuilder sb = new StringBuilder();
+//        for (int i = 0; i < 12; i++) {
+//            sb.append(random.nextInt(10));
+//        }
+//        return sb.toString();
+//    }
+
     // Create new account and publish Kafka event
-    public Account createAccount(Long userId, String type, BigDecimal balance) {
+    public Account createAccount(Long userId, String type, BigDecimal balance, String currencyCode) {
         Account account = Account.builder()
                 .accountNumber(generateAccountNumber())
                 .balance(balance != null ? balance : BigDecimal.ZERO)
                 .userId(userId)
                 .accountType(type)
+                .currencyCode(currencyCode)      // add this
+                .openingDate(LocalDate.now())
                 .build();
 
         Account savedAccount = repo.save(account);
 
         // Publish event to Kafka
-        String message = "ACCOUNT_CREATED:" + savedAccount.getId();
+        String message = "ACCOUNT_CREATED:" + savedAccount.getAccountId();
         kafkaTemplate.send("account-events", message);
 
         return savedAccount;
@@ -91,6 +110,42 @@ public class AccountService {
 
         return updated;
     }
+
+    // Get accounts by currency
+    public List<Account> getAccountsByCurrency(String currencyCode) {
+        return repo.findByCurrencyCode(currencyCode);
+    }
+
+    // Get accounts opened after a date
+    public List<Account> getAccountsOpenedAfter(LocalDate date) {
+        return repo.findByOpeningDateAfter(date);
+    }
+
+    // Get accounts opened before a date
+    public List<Account> getAccountsOpenedBefore(LocalDate date) {
+        return repo.findByOpeningDateBefore(date);
+    }
+
+    // Get accounts opened between two dates
+    public List<Account> getAccountsOpenedBetween(LocalDate start, LocalDate end) {
+        return repo.findByOpeningDateBetween(start, end);
+    }
+
+    // Get accounts by user and currency
+    public List<Account> getAccountsByUserAndCurrency(Long userId, String currencyCode) {
+        return repo.findByUserIdAndCurrencyCode(userId, currencyCode);
+    }
+
+    // Get accounts by balance greater than
+    public List<Account> getAccountsWithBalanceGreaterThan(BigDecimal amount) {
+        return repo.findByBalanceGreaterThan(amount);
+    }
+
+    // Get accounts by balance less than
+    public List<Account> getAccountsWithBalanceLessThan(BigDecimal amount) {
+        return repo.findByBalanceLessThan(amount);
+    }
+
 }
 
 

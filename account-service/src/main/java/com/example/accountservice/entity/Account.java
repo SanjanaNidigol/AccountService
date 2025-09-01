@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "accounts")
@@ -15,7 +16,9 @@ public class Account {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "account_id")  // changed column name
+    private Long accountId;
+
 
     @Column(name = "account_number", nullable = false, unique = true, length = 12)
     private String accountNumber; // 12 digit number
@@ -28,6 +31,12 @@ public class Account {
 
     @Column(name = "account_type", nullable = false)
     private String accountType; // SAVINGS / CURRENT
+
+    @Column(name = "currency_code", nullable = false, length = 3)
+    private String currencyCode;
+
+    @Column(name = "opening_date", nullable = false)
+    private LocalDate openingDate;
 }
 
 

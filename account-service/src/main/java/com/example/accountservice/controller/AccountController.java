@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -19,19 +20,37 @@ public class AccountController {
         this.service = service;
     }
 
-    // POST - Create account
+
     @PostMapping
     public ResponseEntity<Account> createAccount(@RequestBody Map<String, Object> request) {
         Long userId = Long.valueOf(request.get("userId").toString());
         String accountType = request.get("accountType").toString();
+        String currencyCode = request.get("currencyCode").toString();
 
-        // Extract balance if present, else default to 0
         BigDecimal balance = request.containsKey("balance")
                 ? new BigDecimal(request.get("balance").toString())
                 : BigDecimal.ZERO;
 
-        return ResponseEntity.ok(service.createAccount(userId, accountType, balance));
+        return ResponseEntity.ok(
+                service.createAccount(userId, accountType, balance, currencyCode)
+        );
     }
+
+
+
+    // POST - Create account
+//    @PostMapping
+//    public ResponseEntity<Account> createAccount(@RequestBody Map<String, Object> request) {
+//        Long userId = Long.valueOf(request.get("userId").toString());
+//        String accountType = request.get("accountType").toString();
+//
+//        // Extract balance if present, else default to 0
+//        BigDecimal balance = request.containsKey("balance")
+//                ? new BigDecimal(request.get("balance").toString())
+//                : BigDecimal.ZERO;
+//
+//        return ResponseEntity.ok(service.createAccount(userId, accountType, balance));
+//    }
 
     // GET - Get all accounts for a user
     @GetMapping("/user/{userId}")
@@ -70,6 +89,44 @@ public class AccountController {
             return ResponseEntity.badRequest().body(ex.getMessage());
         }
     }
+
+    // GET - Accounts by currency
+    @GetMapping("/currency/{code}")
+    public ResponseEntity<List<Account>> getAccountsByCurrency(@PathVariable String code) {
+        return ResponseEntity.ok(service.getAccountsByCurrency(code));
+    }
+
+    // GET - Accounts opened after a date
+    @GetMapping("/opened-after/{date}")
+    public ResponseEntity<List<Account>> getAccountsOpenedAfter(@PathVariable String date) {
+        LocalDate d = LocalDate.parse(date);
+        return ResponseEntity.ok(service.getAccountsOpenedAfter(d));
+    }
+
+    // GET - Accounts opened between two dates
+    @GetMapping("/opened-between")
+    public ResponseEntity<List<Account>> getAccountsOpenedBetween(
+            @RequestParam String start,
+            @RequestParam String end) {
+        LocalDate startDate = LocalDate.parse(start);
+        LocalDate endDate = LocalDate.parse(end);
+        return ResponseEntity.ok(service.getAccountsOpenedBetween(startDate, endDate));
+    }
+
+    // GET - Accounts by user and currency
+    @GetMapping("/user/{userId}/currency/{code}")
+    public ResponseEntity<List<Account>> getAccountsByUserAndCurrency(
+            @PathVariable Long userId,
+            @PathVariable String code) {
+        return ResponseEntity.ok(service.getAccountsByUserAndCurrency(userId, code));
+    }
+
+    // GET - Accounts with balance greater than
+    @GetMapping("/balance/greater-than")
+    public ResponseEntity<List<Account>> getAccountsWithBalanceGreaterThan(@RequestParam BigDecimal amount) {
+        return ResponseEntity.ok(service.getAccountsWithBalanceGreaterThan(amount));
+    }
+
 }
 
 
