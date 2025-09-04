@@ -1,6 +1,7 @@
 package com.example.accountservice.controller;
 
 import com.example.accountservice.entity.Account;
+import com.example.accountservice.entity.Account.AccountType;
 import com.example.accountservice.service.AccountService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +25,7 @@ public class AccountController {
     @PostMapping
     public ResponseEntity<Account> createAccount(@RequestBody Map<String, Object> request) {
         Long userId = Long.valueOf(request.get("userId").toString());
-        String accountType = request.get("accountType").toString();
+        AccountType accountType = AccountType.valueOf(request.get("accountType").toString().toUpperCase());
         String currencyCode = request.get("currencyCode").toString();
 
         BigDecimal balance = request.containsKey("balance")
@@ -126,6 +127,18 @@ public class AccountController {
     public ResponseEntity<List<Account>> getAccountsWithBalanceGreaterThan(@RequestParam BigDecimal amount) {
         return ResponseEntity.ok(service.getAccountsWithBalanceGreaterThan(amount));
     }
+
+
+    @GetMapping("/{accountId}/userId")
+    public ResponseEntity<Long> getUserIdByAccountId(@PathVariable Long accountId) {
+        Account acc = service.getAccountById(accountId);
+        if (acc != null) {
+            return ResponseEntity.ok(acc.getUserId());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 
 }
 

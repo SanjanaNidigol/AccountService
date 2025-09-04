@@ -1,13 +1,17 @@
 package com.example.accountservice.service;
 
 import com.example.accountservice.entity.Account;
+import com.example.accountservice.entity.Account.AccountType;
 import com.example.accountservice.repository.AccountRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 @Service
@@ -15,10 +19,12 @@ public class AccountService {
 
     private final AccountRepository repo;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
-    public AccountService(AccountRepository repo, KafkaTemplate<String, String> kafkaTemplate) {
+    public AccountService(AccountRepository repo, KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper) {
         this.repo = repo;
         this.kafkaTemplate = kafkaTemplate;
+        this.objectMapper = objectMapper;
     }
 
     // Generate 12-digit account number that doesn't start with 0
@@ -48,7 +54,7 @@ public class AccountService {
 //    }
 
     // Create new account and publish Kafka event
-    public Account createAccount(Long userId, String type, BigDecimal balance, String currencyCode) {
+    public Account createAccount(Long userId, AccountType type, BigDecimal balance, String currencyCode) {
         Account account = Account.builder()
                 .accountNumber(generateAccountNumber())
                 .balance(balance != null ? balance : BigDecimal.ZERO)
@@ -61,8 +67,26 @@ public class AccountService {
         Account savedAccount = repo.save(account);
 
         // Publish event to Kafka
-        String message = "ACCOUNT_CREATED:" + savedAccount.getAccountId();
-        kafkaTemplate.send("account-events", message);
+//        String message = "ACCOUNT_CREATED:" + savedAccount.getAccountId();
+//        kafkaTemplate.send("account-events", message);
+
+        try {
+            String accountNumber = savedAccount.getAccountNumber();
+
+            Map<String, Object> event = new HashMap<>();
+            event.put("eventType", "ACCOUNT_CREATED");
+            event.put("userId", userId);
+            event.put("accountNumber", accountNumber);
+            event.put("accountType", type);
+
+            String message = objectMapper.writeValueAsString(event);
+
+            kafkaTemplate.send("account-events", message);
+            System.out.println("✅ Sent account creation event: " + message);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         return savedAccount;
     }
@@ -91,9 +115,23 @@ public class AccountService {
         acc.setBalance(acc.getBalance().subtract(amount));
         Account updated = repo.save(acc);
 
+        try {
+            Map<String, Object> event = new HashMap<>();
+            event.put("eventType", "ACCOUNT_DEBITED");
+            event.put("accountId", id);
+            event.put("amount", amount);
+            event.put("balance", updated.getBalance());
+
+            String message = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send("account-events", message);
+            System.out.println("✅ Sent debit event: " + message);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         // Publish debit event
-        String message = "ACCOUNT_DEBITED:" + id + ",amount=" + amount;
-        kafkaTemplate.send("account-events", message);
+//        String message = "ACCOUNT_DEBITED:" + id + ",amount=" + amount;
+//        kafkaTemplate.send("account-events", message);
 
         return updated;
     }
@@ -105,8 +143,23 @@ public class AccountService {
         Account updated = repo.save(acc);
 
         // Publish credit event
-        String message = "ACCOUNT_CREDITED:" + id + ",amount=" + amount;
-        kafkaTemplate.send("account-events", message);
+//        String message = "ACCOUNT_CREDITED:" + id + ",amount=" + amount;
+//        kafkaTemplate.send("account-events", message);
+
+        try {
+            Map<String, Object> event = new HashMap<>();
+            event.put("eventType", "ACCOUNT_CREDITED");
+            event.put("accountId", id);
+            event.put("amount", amount);
+            event.put("balance", updated.getBalance());
+
+            String message = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send("account-events", message);
+            System.out.println("✅ Sent credit event: " + message);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
         return updated;
     }
