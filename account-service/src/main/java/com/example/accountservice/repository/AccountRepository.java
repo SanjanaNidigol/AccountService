@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long> {
@@ -24,16 +25,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     List<Account> findByBalanceGreaterThan(BigDecimal amount);
 
     List<Account> findByBalanceLessThan(BigDecimal amount);
+    Optional<Account> findByAccountNumber(String accountNumber);
+
 }
-
-
-//package com.example.accountservice.repository;
-//
-//import com.example.accountservice.entity.Account;
-//import org.springframework.data.jpa.repository.JpaRepository;
-//
-//import java.util.Optional;
-//
-//public interface AccountRepository extends JpaRepository<Account, Long> {
-//    Optional<Account> findByAccountNumber(String accountNumber);
-//}

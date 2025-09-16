@@ -16,7 +16,7 @@ public class Account {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "account_id")  // changed column name
+    @Column(name = "account_id")
     private Long accountId;
 
 
@@ -27,7 +27,7 @@ public class Account {
     private BigDecimal balance;
 
     @Column(name = "user_id", nullable = false)
-    private Long userId;   // ✅ NOT unique → allows multiple accounts per user
+    private Long userId;   // NOT unique → allows multiple accounts per user
 
 //    @Column(name = "account_type", nullable = false)
 //    private String accountType; // SAVINGS / CURRENT SALARY FIXED_DEPOSIT
@@ -51,27 +51,3 @@ public class Account {
         NRO_SAVINGS
     }
 }
-
-
-//package com.example.accountservice.entity;
-//
-//import jakarta.persistence.*;
-//import lombok.*;
-//
-//import java.math.BigDecimal;
-//
-//@Entity
-//@Table(name = "accounts")
-//@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-//public class Account {
-//    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    private Long id;
-//
-//    private Long userId;
-//
-//    @Column(nullable = false, unique = true, length = 12)
-//    private String accountNumber;
-//
-//    @Column(nullable = false, precision = 19, scale = 2)
-//    private BigDecimal balance = BigDecimal.ZERO;
-//}

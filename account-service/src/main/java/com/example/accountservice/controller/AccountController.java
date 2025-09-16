@@ -5,7 +5,6 @@ import com.example.accountservice.entity.Account.AccountType;
 import com.example.accountservice.service.AccountService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,7 +20,6 @@ public class AccountController {
         this.service = service;
     }
 
-
     @PostMapping
     public ResponseEntity<Account> createAccount(@RequestBody Map<String, Object> request) {
         Long userId = Long.valueOf(request.get("userId").toString());
@@ -36,22 +34,6 @@ public class AccountController {
                 service.createAccount(userId, accountType, balance, currencyCode)
         );
     }
-
-
-
-    // POST - Create account
-//    @PostMapping
-//    public ResponseEntity<Account> createAccount(@RequestBody Map<String, Object> request) {
-//        Long userId = Long.valueOf(request.get("userId").toString());
-//        String accountType = request.get("accountType").toString();
-//
-//        // Extract balance if present, else default to 0
-//        BigDecimal balance = request.containsKey("balance")
-//                ? new BigDecimal(request.get("balance").toString())
-//                : BigDecimal.ZERO;
-//
-//        return ResponseEntity.ok(service.createAccount(userId, accountType, balance));
-//    }
 
     // GET - Get all accounts for a user
     @GetMapping("/user/{userId}")
@@ -128,6 +110,38 @@ public class AccountController {
         return ResponseEntity.ok(service.getAccountsWithBalanceGreaterThan(amount));
     }
 
+    @GetMapping("/{id}/balance")
+    public ResponseEntity<Map<String, Object>> getAccountBalance(@PathVariable Long id) {
+        Account acc = service.getAccountById(id);
+        if (acc != null) {
+            return ResponseEntity.ok(Map.of("balance", acc.getBalance()));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/{accountId}/number")
+    public ResponseEntity<String> getAccountNumberByAccountId(@PathVariable Long accountId) {
+        Account account = service.getAccountById(accountId);
+        if (account != null) {
+            return ResponseEntity.ok(account.getAccountNumber());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
+
+    @GetMapping("/id/byNumber/{accountNumber}")
+    public ResponseEntity<Long> getAccountIdByNumber(@PathVariable String accountNumber) {
+        try {
+            Account account = service.getAccountByNumber(accountNumber);
+            return ResponseEntity.ok(account.getAccountId());
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 
     @GetMapping("/{accountId}/userId")
     public ResponseEntity<Long> getUserIdByAccountId(@PathVariable Long accountId) {
@@ -139,100 +153,11 @@ public class AccountController {
         }
     }
 
+    @GetMapping("/byNumber/{accountNumber}")
+    public ResponseEntity<Account> getAccountByNumber(@PathVariable String accountNumber) {
+        Account account = service.getAccountByNumber(accountNumber);
+        return ResponseEntity.ok(account);
+    }
+
 
 }
-
-
-//package com.example.accountservice.controller;
-//
-//import com.example.accountservice.entity.Account;
-//import com.example.accountservice.service.AccountService;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.web.bind.annotation.*;
-//
-//import java.math.BigDecimal;
-//import java.util.List;
-//import java.util.Map;
-//
-//@RestController
-//@RequestMapping("/accounts")
-//public class AccountController {
-//
-//    private final AccountService service;
-//
-//    public AccountController(AccountService service) {
-//        this.service = service;
-//    }
-//
-//    // POST - Create account
-//    @PostMapping
-//    public ResponseEntity<Account> createAccount(@RequestBody Map<String, Object> request) {
-//        Long userId = Long.valueOf(request.get("userId").toString());
-//        String accountType = request.get("accountType").toString();
-//
-//        // Extract balance from the request body, handling the case where it might be null
-//        BigDecimal balance = null;
-//        if (request.containsKey("balance")) {
-//            balance = new BigDecimal(request.get("balance").toString());
-//        }
-//
-//        // Pass all three arguments to the service method
-//        return ResponseEntity.ok(service.createAccount(userId, accountType, balance));
-//    }
-//
-//    // GET - Get all accounts for a user
-//    @GetMapping("/user/{userId}")
-//    public ResponseEntity<List<Account>> getAccountsByUser(@PathVariable Long userId) {
-//        return ResponseEntity.ok(service.getAccountsByUserId(userId));
-//    }
-//
-//    // GET - Get account by ID
-//    @GetMapping("/{id}")
-//    public ResponseEntity<Account> getAccountById(@PathVariable Long id) {
-//        return ResponseEntity.ok(service.getAccountById(id));
-//    }
-//
-//    // GET - Get all accounts (admin use case)
-//    @GetMapping
-//    public ResponseEntity<List<Account>> getAllAccounts() {
-//        return ResponseEntity.ok(service.getAllAccounts());
-//    }
-//
-//
-//
-//}
-//
-////package com.example.accountservice.controller;
-////
-////import com.example.accountservice.entity.Account;
-////import com.example.accountservice.service.AccountService;
-////import jakarta.validation.constraints.NotBlank;
-////import jakarta.validation.constraints.NotNull;
-////import lombok.Data;
-////import lombok.RequiredArgsConstructor;
-////import org.springframework.http.ResponseEntity;
-////import org.springframework.web.bind.annotation.*;
-////
-////import java.math.BigDecimal;
-////
-////@RestController
-////@RequestMapping("/api/accounts")
-////@RequiredArgsConstructor
-////public class AccountController {
-////    private final AccountService service;
-////
-////    @PostMapping
-////    public ResponseEntity<Account> create(@RequestBody CreateRequest req) {
-////        return ResponseEntity.ok(service.create(req.getUserId(), req.getAccountNumber()));
-////    }
-////
-////    @PostMapping("/deposit")
-////    public ResponseEntity<Account> deposit(@RequestBody DepositRequest req) {
-////        return ResponseEntity.ok(service.deposit(req.getAccountNumber(), req.getAmount()));
-////    }
-////
-////    @Data
-////    public static class CreateRequest { @NotNull Long userId; @NotBlank String accountNumber; }
-////    @Data
-////    public static class DepositRequest { @NotBlank String accountNumber; @NotNull BigDecimal amount; }
-////}
